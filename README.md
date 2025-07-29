@@ -1,2 +1,2 @@
 # EconEDA
-This python file uses an API key and scrapes, cleans, and explores economic data using the Federal Reserve Economic Data.
+This project is a comprehensive economic data visualization and analysis tool built in Python using publicly available macroeconomic indicators from the Federal Reserve Economic Data (FRED) API. It focuses on analyzing U.S. economic conditions, particularly the S&P 500 Index, unemployment rates, and labor force participation rates across U.S. states, with a spotlight on the impact during the COVID-19 pandemic.
