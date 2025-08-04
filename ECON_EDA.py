@@ -1,6 +1,17 @@
 ## Economic Data Analysis Project
 ## Zak Kotschegarow
 
+## This project gets data off the FRED website, we analyze the S&P500
+## and look at unemployment rates, plot unemp rates, pull participation rate
+## plot Unemployment vs participation for each state.
+
+## keep my api key a secret
+from dotenv import load_dotenv
+import os
+load_dotenv()
+api_key = os.getenv("API_KEY")
+
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,20 +27,24 @@ color_pal = plt.rcParams['axes.prop_cycle'].by_key()['color']
 from fredapi import Fred
 
 ## 1. Create the Fred object
-fred = Fred(api_key='e0fb5aaa932be45a0c8bd4f00c8c6284')
+fred = Fred(api_key=api_key)
+
 
 ## 2. Search for economic data
 sp_search = fred.search('S&P', order_by='popularity')  ## S&P 500
+
 
 ## 3. Pull raw data & Plot the S&P500
 sp500 = fred.get_series(series_id='SP500')
 sp500.plot(figsize=(10, 5), title='S&P500', lw=2)
 plt.show()
 
+
 ## 4. Pull and join multiple data series 
 unemp_df = fred.search('unemployment rate state', filter=('frequency', 'Monthly'))
 unemp_df = unemp_df.query('seasonal_adjustment == "Seasonally Adjusted" and units == "Percent"')
 unemp_df = unemp_df.loc[unemp_df['title'].str.contains('Unemployment Rate')]
+
 
 ## Fetch and combine unemployment data series
 all_results = []
@@ -39,6 +54,7 @@ for myid in unemp_df.index:
     all_results.append(results)
 uemp_results = pd.concat(all_results, axis=1)
 
+
 ## Drop problematic columns with unusual lengths
 cols_to_drop = []
 for i in uemp_results:
@@ -46,15 +62,18 @@ for i in uemp_results:
         cols_to_drop.append(i)
 uemp_results = uemp_results.drop(columns=cols_to_drop, axis=1)
 
+
 ## Clean up and rename columns for clarity
 uemp_states = uemp_results.copy()
 uemp_states = uemp_states.dropna()   ## Remove any rows with missing data
 id_to_state = unemp_df['title'].str.replace('Unemployment Rate in ', '').to_dict()
 uemp_states.columns = [id_to_state[c] for c in uemp_states.columns]
 
+
 # Plot States Unemployment Rate
 fig = px.line(uemp_states, title="Unemployment Rates by State")
 fig.show(renderer="browser")
+
 
 ## Pull May 2020 Unemployment Rate Per State
 ax = uemp_states.loc[uemp_states.index == '2020-05-01'].T \
@@ -64,6 +83,7 @@ ax = uemp_states.loc[uemp_states.index == '2020-05-01'].T \
 ax.legend().remove()
 ax.set_xlabel('% Unemployed')
 plt.show()
+
 
 ## Pull Participation Rate
 part_df = fred.search('participation rate state', filter=('frequency', 'Monthly'))
@@ -79,19 +99,23 @@ for myid in part_df.index:
 part_states = pd.concat(all_results, axis=1)
 part_states.columns = [part_id_to_state[c] for c in part_states.columns]
 
+
 ## Plot Unemployment vs Participation for each state
 # Fix DC
 uemp_states = uemp_states.rename(columns={'the District of Columbia': 'District Of Columbia'})
 
+
 # Filter out invalid states
 valid_states = [state for state in uemp_states.columns if state not in ["District Of Columbia", "Puerto Rico"]]
 n_states = len(valid_states)
+
 
 # Setup subplot grid dynamically
 cols = 5
 rows = -(-n_states // cols)  # Ceiling division
 fig, axs = plt.subplots(rows, cols, figsize=(cols * 6, rows * 3), sharex=True)
 axs = axs.flatten()
+
 
 ## Plot each state's unemployment and participation
 for i, state in enumerate(valid_states):
@@ -101,12 +125,14 @@ for i, state in enumerate(valid_states):
     ax2.grid(False)
     axs[i].set_title(state)
 
+
 ## Hide any unused subplots
 for j in range(i + 1, len(axs)):
     fig.delaxes(axs[j])
 
 plt.tight_layout()
 plt.show()
+
 
 ## Single state detail: California
 state = 'California'
